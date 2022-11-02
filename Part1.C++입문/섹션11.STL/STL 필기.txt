@@ -151,3 +151,91 @@ vector와 마찬가지로 배열 기반으로 동작하지만, 메모리 할당 
 //그런데 초기 배열의 크기가 어떻게 됨? 4바이트인가?
 
 !결국, 쓰임새는 vector와 비슷하지만, 앞에서 삽입/삭제 하는것이 더 수월하다.
+
+[ map #1, #2 ]
+시퀀스가 아닌 '연관 컨테이너'. vector와 더불어 사용빈도가 높다.
+vector, list같은 시퀀스는 원하는 데이터를 찾을때 애로사항이 있다. 치명적단점->서칭
+
+연관컨테이너 = 입력순서대로 데이터가 배치되지 않고, 데이터의 특징에 따라 배치
+
+map : 균형 이진 트리(AVL)-노드 기반
+
+#include <map>
+class Player //설명용으로 사용할 player. 그저 왼쪽자식과 오른쪽자식을 노드로 갖는다는것만 알아두면됨.
+{
+	public:
+		Node* _left;
+		Node* _right;
+		
+		int _key;
+		Player* _value;
+}
+
+map<int, int> m; //<Key, Value>
+
+for(int i=0;i<100;i++)
+{
+	m.insert(pair<int, int>(i, i*100)); //map에다가 pair를 넣는것. pair는 말그대로 key와 value의 쌍 구조체
+}
+
+map<int, int>::iterator findIt = m.find(51); //만약 값을 못찾는다면, it는 m.end()의 값을 갖는다고한다.
+
+//만약 같은key,다른value 갖는pair를 또 넣어주면 어떻게 될까? => 두번째 요청을 무시한다. 반환값은 그key의 pair와  bool여부
+//없으면추가,있으면수정 용법: m[5] = 500; key=5, value=500이라는 데이터를 넣을수 있다.(vector때와 같은형태지만, 순번이라는 의미가 아님)
+
+
+[ set, multimap, multiset ]
+set : map과 달리 <key> 형태로 사용. 즉, 키가 밸류 그 자체임 key=value
+multimap : 중복 key를 허용하는 map
+multiset : 중복 key를 허용하는 set
+//사실 map과set가 특정 값을 기반으로 객체를 찾기위해 자주 사용하기에, 멀티시리즈는 잘안씀 
+
+[ 연습문제 ]
+vector를 사용해 알고리즘에 들어가기 앞선 코드 연습. 생략
+
+[ algorithm ] 라이브러리의 한종류
+위 연습문제를 algorithm라이브러리를 사용해 가독성 좋게 만들수있다.
+그동안 배워왔던 알고리즘들을 라이브러리에 구현해놨기에, 이를 사용하는 방법을 알면 손쉽게 프로그램을 짤수있다.
+
+<자주쓰는 알고리즘>
+find / find_if
+count / count_if / all_of / any_of / none_of
+for_each
+remove / remove_if
+
+1.특정 숫자가 벡터에 있는지 체크하는 기능 //std::find 를 쓰자
+auto it = find(v.begin(), v.end(), number); //사실 인자는 VS에서 보여주는걸 보고해야될듯
+
+2.11로 나뉘는 숫자가 벡터에 있는지? =특정 조건을 만족하는 밸류가 있는지? //std::find_if
+struct CanDivideBy11
+{
+	bool operator()(int n)
+	{
+		return (n%11)==0;
+	}
+}
+auto it = find_if(v.begin(), v.end(), CanDivideBy11()); //함수처럼 쓸수있다면, 시그니쳐만 맞추면 어디서든 전달이 가능하다는 template의 장점 이용
+//사실 구조체 만들것도 없이, 1회성함수인 람다식을 사용하면 더쉽다.
+find_if(v.begin(), v.end(), [] (int n) {return(n%11)==0;} );
+
+3.홀수인 숫자의 개수는? //std::count_if
+int a = count_if(v.begin(), v.end(), [] (int n) {return(n%2)==1;} );
+
+all_of : 모든 데이터가 조건을 만족하는지? bool a = all_of(v.begin(), v.end(), [] (int n) {return(n%2)==1;} );
+any_of : 어떤 데이터든 조건을 만족하는지? bool a = ~
+none_of: 모든 데이터가 조건을 만족하지 않는가? bool a = ~
+
+4.벡터의 모든 데이터에 숫자 3을 곱해주세요 //for_each
+모든 데이터를 상대로 기능을 수행
+for_each(시작, 끝, 기능)
+
+5. 홀수인 데이터를 일괄 삭제하고 싶다. remove / remove_if : 해당 데이터를 삭제 / 조건에 맞다면 삭제
+위 알고리즘과 조금 다르게 동작 (데이터를 찾자마자 삭제한다면, vector의 단점인 각 데이터들을 당겨주는 비효율성이 발생한다.=>필요한 애들을 남겼다가 삭제&보존)
+// 코드 까보니까, 남겨줘야 하는애들은 vector앞에서부터 새로 붙여넣고 다끝나면 새로붙인 자리들 뒤에 end를 만들어주는듯
+=>실질적으론 데이터 삭제가 아닌, 새롭게 데이터를 만들고 end로 사용할 it의 포인터 자리를 리턴한다.
+auto it = remove(시작, 끝, 조건);
+v.erase(it, v.end()); //remove는 지우는게 아니고 어디까지 지울지 자리를 return하기에, 뒤에 erase를 해줘야 한다.
+예시: 1 4 3 5 8 2
+remove시 : 4 8 2 5 8 2 //4,8,2가 보존되고 v가 482582로 바뀜. it는 5의 자리를 반환한다.
+erase시 : 4 8 2
+!remove와 erase는 세트라는 것을 기억
