@@ -1,0 +1,122 @@
+[ auto ]
+컴파일 단계에서 자동으로 변수 타입을 잡아준다.
+형식 연역(type deduction) = template이나 auto에서 나오듯, 알아서 말이되게 맞춰주는 조커카드 (추론)
+추론단계에서도 조건을 추가할 수 있다. ex) const auto / auto*
+
+주의!) 기본 auto는 const, &(ref)를 무시한다!!
+ex) int& reference = a;
+	const int cst = a;
+	
+	auto test1 = reference;
+	auto test2 = cst;
+	//이 경우, test1, test2 모두 그냥 int가 된다. 앞서말했듯 const와 &를 무시하기 때문에
+	위를 유지하고 싶다면, const auto, auto&라고 명시해줘야함. -> 그런데 캐스팅 할거면 auto를 쓸이유가 없지
+	
+그럼 모든 타입을 auto로 써도 되나?
+-> No! 타이핑이 너무길어지는게 아니라면, 오히려 가독성이 떨어진다. 일반적인 경우 그냥 타입을 써주는게 좋다.
+ex)map의 페어: pair<map<int,int>::iterator,bool> /사실 저기서 first와 second만 쓰기에 타입형태는 관심도 없는 경우가 많다. auto로 쓰는게 편하다.
+
+!일단 초보적인 단계에서는, auto는 긴 타이핑을 생략할때 쓴다고 생각하자. 그중 const와 &를 조심하는건 잊지말고
+
+[ 중괄호 초기화 {} ]
+생성하는 문법의 통일을 위해 사용됨.
+int a=0;
+int b(0);
+int c{0}; //이런식으로 {}로 초기화를 해줄수 있는것.
+
+Knight k2 = k1;
+Knight k3{ k2 }; //클래스에서도 가능
+
+int arr[] = {1,2,3,4}; //배열에서는 이미 중괄호 초기화를 쓰고있었다.
+
+<중괄호 초기화의 장점>
+1)vector등 container와 잘 어울린다.
+ex)vector<int> v3{1,2,3,4}; //생성과 동시에 push_back해준 효과
+
+2)축소 변환 방지 
+ex)int x=0;
+   double y(x); //원래는 아무 의식없이 쓰던 코드도
+---double y{x}; //중괄호 초기화시 깐깐하게 작동하여 에러가 뜸//int와 double은 완벽히 호환되는 타입이 아니기에 작은 손실이 날수도 있지만 그걸 방지 가능
+
+3)보너스
+Knight k4(); //이것은 함수를 호출하는 형태이다.
+Knight k5{}; //이게 기본생성자 호출 - 가독성이 좋아진다 정도?
+
+<중괄호 초기화의 단점>
+Knight k6{1,2,3} //기본생성자가 아닌, initializer list를 사용하는 생성자. <-사실 그버전으로 생성자를 만들어주면됨. 그냥 생소해서 문제
+->단, 비슷한 형태의 생성자가 있다고해도 무조건 initializer list버전이 호출됨
+
+! 괄호 초기화() 옹호: 전통적(거부감 없음), vector등 특이 케이스에만 {}사용
+  중괄호 초기화() 옹호: 초기화문법의 일치화, 축소변환 방지
+  
+[ nullptr ]
+없는 포인터를 표시할때, 기존에는 0이나 NULL을 사용했다.(실제로도 nullptr을 타고가면 0이 있긴하다)(NULL도 0인데 너무 정수같으니 형태만 바꾼것 typedef)
+그러나 이 경우, NULL이 함수의 인자로 사용되면 포인터가 아닌 정수로 인식된다.
+->0(없음)이지만 확실히 포인터라고 강조할게 필요-> nullptr
+
+장점>
+1)오동작 방지
+2)가독성
+
+[ using ] typedef대신 사용하는 문법
+using과 typedef의 차이점
+
+typedef int id;
+using id2 = int; //둘의 순서가 다르다.
+
+1)직관성
+typedef void (*MyFunc) ();
+using MyFunc2 = void(*)(); //myfunc2는 void*라는걸 한눈에 알 수 있다.
+
+2)템플릿 사용가능
+typedef의 경우 템플릿을 사용해 여러 형태를 만들수는 없다.
+-> using은 가능
+ex) template<typename T>
+	using List = std::list<T>;
+	
+	typedef std::vector<T> List2; <-허용안됨
+	전에는 쓰고싶으면 struct를 만들어 그안에 typedef를 호출했다. 번거로움
+	아무튼 이런구조이기에 예전코드에선 ::을 많이 사용했음
+
+[ enum class ]
+enum: 열거자, 범위가 없기에(unscoped) 이름의 특징(PT_)을 붙여 사용했음.(안그러면 다른 enum에는 같은 이름 사용못함)
+enum PlayerType
+{
+	PT_Knight,
+	PT_Archer,
+	PT_mage
+};
+
+enum class: 이름공간 관리(scoped), 암묵적인 변환 금지
+enum class ObjectType
+{
+	Player,
+	Monster,
+	Projectile
+};
+사용시, 암묵적인 변환이 안되기에
+double value = ObjectType::Player; 로 하면, 알아서 변환되지 않고 에러발생
+double value =static_cast<double>ObjectType::Player; 캐스팅으로 명시해줘야하며, 이름공간도 밝혀야함
+=>이름공간관리로 편하고 컴파일에러로 깐깐하게 검사할수 있지만, 번거롭긴하다.
+
+[ delete (삭제된 함수) ]
+class를 만든다고 할때, 기능을 우리가 만들지 않아도 자동으로 컴파일러가 만드는 기능들이 있다. (기본생성자,복사연산자 같은것)
+=>이것을 사용하지 못하게 하고싶을때, 해당 함수를 delete 삭제해버리면 된다.
+(예전에는 private로 비공개 시켜서 해당 기능을 비슷하게 사용했다.)
+
+사용법 : void AddHP() = delete; 
+삭제할 함수 뒤에 = delete를 붙이면 된다.
+
+[ override, final ]
+override: 기능의 재정의 //overload: 함수'이름'의 재사용, 버전2를 만드는것. 헷갈리지말자
+상속관계에서 자신의 타입에 맞는 함수를 호출하기 위해 virtual(가상함수)을 사용했다. //RTTI 참조
+//부모에서 virtual을 붙인다면, 자식들은 virtual을 붙이지않아도 해당함수가 가상함수라는것을 알수있다.(그러나 가독성을 위해 그냥 붙이자)
+그러나 virtual을 계속 붙여가면, 어디서 최초로 virtual을 붙였는지 알기힘들다.
+->그래서 상속받아 사용한다는 표시를 위해 override를 붙인다.(일종의 안전장치:만약 부모에 해당 함수가 없다면 에러 뜸)
+사용법: virtual void Attack() override
+	{
+	}
+//필수라기보다는 안전장치라 있으면 좋다. 습관 들이자.
+
+final: 부모의 함수를 override하고있다 + 더이상 내 자손은 override하지말라는 표시
+
